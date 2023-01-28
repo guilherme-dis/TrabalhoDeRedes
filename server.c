@@ -65,12 +65,6 @@ char *retrieve_message(char *receiver)
     return ret_message;
 }
 
-int main(void)
-{
-    char *busca = retrieve_message("daniel");
-    printf("%s", busca);
-}
-
 int changeStatus(char *argumento, int status)
 {
     char *username = strtok(argumento, " ");
