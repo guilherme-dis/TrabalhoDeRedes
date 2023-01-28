@@ -27,6 +27,50 @@ void sigchld_handler(int s)
         ;
 }
 
+void store_message(char *receiver, char *sender, char *message)
+{
+    FILE *fp;
+    fp = fopen("messages.txt", "a");                          // Abre o arquivo em append mode
+    fprintf(fp, "%s %s \"%s\"\n", receiver, sender, message); // Escreve no arquivo no modo "Destinatario remetente "mensagem"
+    fclose(fp);
+}
+
+char *retrieve_message(char *receiver)
+{
+    FILE *fp;
+    char line[255];
+    char *ret_message = "";
+    fp = fopen("messages.txt", "r"); // open the file in read mode
+    if (fp == NULL)
+    {
+        printf("Error opening file!\n");
+        return "Error";
+    }
+    while (fgets(line, sizeof(line), fp))
+    {
+        // check if the line starts with the receiver's name
+        if (strncmp(line, receiver, strlen(receiver)) == 0)
+        {
+            if (ret_message[0] == '\0')
+            {
+                ret_message = strdup(line);
+            }
+            else
+            {
+                strcat(ret_message, line);
+            }
+        }
+    }
+    fclose(fp);
+    return ret_message;
+}
+
+int main(void)
+{
+    char *busca = retrieve_message("daniel");
+    printf("%s", busca);
+}
+
 int changeStatus(char *argumento, int status)
 {
     char *username = strtok(argumento, " ");
@@ -52,7 +96,6 @@ int changeStatus(char *argumento, int status)
     fclose(fp);
     return 0;
 }
-
 
 int getCredentials(char *argumento)
 {
@@ -80,8 +123,6 @@ int loggoutInterno(char *argumento)
     changeStatus(argumento, 0);
 }
 
-
-
 int logginInterno(char *argumento)
 {
     if (getCredentials(argumento) == 0)
@@ -93,8 +134,6 @@ int logginInterno(char *argumento)
     printf("logginInterno: %s não encontrado\n", argumento);
     return -1;
 }
-
-
 
 int main(int argc, char **argv)
 {
