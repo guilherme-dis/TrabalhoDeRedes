@@ -27,6 +27,67 @@ void sigchld_handler(int s)
         ;
 }
 
+int changeStatus(char *argumento, int status)
+{
+    char *username = strtok(argumento, " ");
+
+    FILE *fp;
+    fp = fopen("status.txt", "r+");
+    if (fp == NULL)
+    {
+        printf("Erro ao abrir o arquivo status.txt");
+        return -1;
+    }
+    char linha[100];
+    while (fgets(linha, 100, fp) != NULL)
+    {
+        if (strstr(linha, username) != NULL)
+        {
+            fseek(fp, -strlen(linha), SEEK_CUR);
+            fprintf(fp, "%s %d\n", username, status);
+            fclose(fp);
+            return 0;
+        }
+    }
+    fprintf(fp, "%s %d\n ", username, status);
+    fclose(fp);
+    return 0;
+}
+
+int logginInterno(char *argumento)
+{
+    if (getCredentials(argumento) == 0)
+    {
+        printf("logginInterno: %s encontrado\n", argumento);
+        changeStatus(argumento, 1);
+        return 0;
+    }
+    printf("logginInterno: %s não encontrado\n", argumento);
+    return -1;
+}
+
+int getCredentials(char *argumento)
+{
+    FILE *fp;
+    fp = fopen("credenciais.txt", "r");
+    if (fp == NULL)
+    {
+        printf("Erro ao abrir o arquivo credenciais.txt");
+        return -1;
+    }
+    char linha[100];
+    while (fgets(linha, 100, fp) != NULL)
+    {
+        if (strstr(linha, argumento) != NULL) // se o argumento tiver menas letras, mas for igual tipo "joao" e "joaozinho", ele vai retornar 0 porque joao esta contido em joaozinho
+        {
+            fclose(fp);
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
 int main(int argc, char **argv)
 {
     int sockfd, new_fd;            // listen on sock_fd, new connection on new_fd
@@ -111,7 +172,18 @@ int main(int argc, char **argv)
                 {
                     buf[message_len] = '\0';
                     printf("Client says: %s\n", buf);
-                    
+
+                    // a primeira palavra do buffer é o comando
+                    char *comando = strtok(buf, " ");
+                    // o resto do buffer é o argumento
+                    char *argumento = strtok(NULL, "\0");
+
+                    // verificar se o comando é "loggin"
+                    if (strcmp(comando, "loggin") == 0)
+                    {
+                        // mandar os argumentos para a função loggin
+                        retVal = logginInterno(argumento);
+                    }
                 }
 
                 /* 'bye' message finishes the connection */
