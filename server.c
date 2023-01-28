@@ -27,10 +27,14 @@ void sigchld_handler(int s)
         ;
 }
 
+int loggoutInterno(char *argumento)
+{
+    changeStatus(argumento, 0);
+}
+
 int changeStatus(char *argumento, int status)
 {
     char *username = strtok(argumento, " ");
-
     FILE *fp;
     fp = fopen("status.txt", "r+");
     if (fp == NULL)
@@ -183,6 +187,13 @@ int main(int argc, char **argv)
                     {
                         // mandar os argumentos para a função loggin
                         retVal = logginInterno(argumento);
+                    }
+
+                    // verificar se o comando é "loggout"
+                    if (strcmp(comando, "loggout") == 0)
+                    {
+                        // mandar os argumentos para a função loggout
+                        retVal = loggoutInterno(argumento);
                     }
                 }
 
