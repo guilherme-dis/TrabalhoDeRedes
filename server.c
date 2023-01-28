@@ -27,11 +27,6 @@ void sigchld_handler(int s)
         ;
 }
 
-int loggoutInterno(char *argumento)
-{
-    changeStatus(argumento, 0);
-}
-
 int changeStatus(char *argumento, int status)
 {
     char *username = strtok(argumento, " ");
@@ -58,17 +53,6 @@ int changeStatus(char *argumento, int status)
     return 0;
 }
 
-int logginInterno(char *argumento)
-{
-    if (getCredentials(argumento) == 0)
-    {
-        printf("logginInterno: %s encontrado\n", argumento);
-        changeStatus(argumento, 1);
-        return 0;
-    }
-    printf("logginInterno: %s não encontrado\n", argumento);
-    return -1;
-}
 
 int getCredentials(char *argumento)
 {
@@ -91,6 +75,26 @@ int getCredentials(char *argumento)
 
     return -1;
 }
+int loggoutInterno(char *argumento)
+{
+    changeStatus(argumento, 0);
+}
+
+
+
+int logginInterno(char *argumento)
+{
+    if (getCredentials(argumento) == 0)
+    {
+        printf("logginInterno: %s encontrado\n", argumento);
+        changeStatus(argumento, 1);
+        return 0;
+    }
+    printf("logginInterno: %s não encontrado\n", argumento);
+    return -1;
+}
+
+
 
 int main(int argc, char **argv)
 {
