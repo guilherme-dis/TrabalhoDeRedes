@@ -66,7 +66,7 @@ char *retrieve_message(char *receiver)
 }
 int sendMessage(char *destinatario, char *msg)
 {
-    
+
     printf("\nDestinatario: %s", destinatario);
     printf("\nMensagem: %s", msg);
 
@@ -93,7 +93,6 @@ int sendMessage(char *destinatario, char *msg)
             return 0;
         }
     }
-
 }
 
 int saveDns(char *argumento, int new_fd)
@@ -268,9 +267,6 @@ int main(int argc, char **argv)
                 int message_len;
                 if ((message_len = recv(new_fd, buf, 1000, 0)) > 0)
                 {
-                    buf[message_len] = '\0';
-                    printf("Client says: %s\n", buf);
-
                     // a primeira palavra do buffer é o comando
                     char *comando = strtok(buf, " ");
                     // o resto do buffer é o argumento
@@ -279,20 +275,16 @@ int main(int argc, char **argv)
                     // verificar se o comando é "loggin"
                     if (strcmp(comando, "loggin") == 0)
                     {
-                        retVal = logginInterno(argumento);
-                        //usse a função save dns passando o argumento e o endereço do cliente para fazer o envio das mensagens
-                        saveDns(argumento, inet_ntoa(their_addr.sin_addr));
-                        
+                        logginInterno(argumento);
+                        //saveDns(argumento, inet_ntoa(their_addr.sin_addr));
                     }
-
-                    // verificar se o comando é "loggout"
                     else if (strcmp(comando, "loggout") == 0)
                     {
-                        // mandar os argumentos para a função loggout
                         loggoutInterno(argumento);
                     }
-                    else{
-                        sendMessage(comando,argumento);
+                    else//Caso não seja um comando, vai ser uma mensagem
+                    {
+                        sendMessage(comando, argumento);
                     }
 
                 }
@@ -301,10 +293,7 @@ int main(int argc, char **argv)
                 if (strcmp(buf, "bye") == 0)
                 {
                     send(new_fd, "bye", 3, 0);
-                }
-                else
-                {
-                    send(new_fd, "yep", 4, 0);
+                    //fazer o loggout
                 }
 
             } while (strcmp(buf, "bye"));
