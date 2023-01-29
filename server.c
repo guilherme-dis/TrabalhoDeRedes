@@ -64,6 +64,63 @@ char *retrieve_message(char *receiver)
     fclose(fp);
     return ret_message;
 }
+int sendMessage(char *destinatario, char *msg)
+{
+    
+    printf("\nDestinatario: %s", destinatario);
+    printf("\nMensagem: %s", msg);
+
+    FILE *fp;
+    fp = fopen("dns.txt", "r");
+    if (fp == NULL)
+    {
+        printf("Erro ao abrir o arquivo dns.txt");
+        return -1;
+    }
+    char linha[100];
+    while (fgets(linha, 100, fp) != NULL)
+    {
+        if (strstr(linha, destinatario) != NULL)
+        {
+            char *new_fd = strtok(linha, " ");
+            new_fd = strtok(NULL, " ");
+            int new_fd_int = atoi(new_fd);
+            if (send(new_fd_int, msg, strlen(msg), 0) == -1)
+            {
+                perror("send");
+            }
+            fclose(fp);
+            return 0;
+        }
+    }
+
+}
+
+int saveDns(char *argumento, int new_fd)
+{
+    char *username = strtok(argumento, " ");
+    FILE *fp;
+    fp = fopen("dns.txt", "r+");
+    if (fp == NULL)
+    {
+        printf("Erro ao abrir o arquivo dns.txt");
+        return -1;
+    }
+    char linha[100];
+    while (fgets(linha, 100, fp) != NULL)
+    {
+        if (strstr(linha, username) != NULL)
+        {
+            fseek(fp, -strlen(linha), SEEK_CUR);
+            fprintf(fp, "%s %d\n", username, new_fd);
+            fclose(fp);
+            return 0;
+        }
+    }
+    fprintf(fp, "%s %d\n", username, new_fd);
+    fclose(fp);
+    return 0;
+}
 
 int changeStatus(char *argumento, int status)
 {
@@ -112,7 +169,7 @@ int getCredentials(char *argumento)
 
     return -1;
 }
-int loggoutInterno(char *argumento)
+void loggoutInterno(char *argumento)
 {
     changeStatus(argumento, 0);
 }
@@ -222,16 +279,22 @@ int main(int argc, char **argv)
                     // verificar se o comando é "loggin"
                     if (strcmp(comando, "loggin") == 0)
                     {
-                        // mandar os argumentos para a função loggin
                         retVal = logginInterno(argumento);
+                        //usse a função save dns passando o argumento e o endereço do cliente para fazer o envio das mensagens
+                        saveDns(argumento, inet_ntoa(their_addr.sin_addr));
+                        
                     }
 
                     // verificar se o comando é "loggout"
-                    if (strcmp(comando, "loggout") == 0)
+                    else if (strcmp(comando, "loggout") == 0)
                     {
                         // mandar os argumentos para a função loggout
-                        retVal = loggoutInterno(argumento);
+                        loggoutInterno(argumento);
                     }
+                    else{
+                        sendMessage(comando,argumento);
+                    }
+
                 }
 
                 /* 'bye' message finishes the connection */
@@ -241,7 +304,7 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    send(new_fd, "yep\n", 4, 0);
+                    send(new_fd, "yep", 4, 0);
                 }
 
             } while (strcmp(buf, "bye"));
