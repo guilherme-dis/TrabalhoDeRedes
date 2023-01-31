@@ -30,9 +30,47 @@ void sigchld_handler(int s)
 void store_message(char *receiver, char *sender, char *message)
 {
     FILE *fp;
-    fp = fopen("messages.txt", "r+");                          // Abre o arquivo em append mode
+    fp = fopen("messages.txt", "r+");                         // Abre o arquivo em append mode
     fprintf(fp, "%s %s \"%s\"\n", receiver, sender, message); // Escreve no arquivo no modo "Destinatario remetente "mensagem"
     fclose(fp);
+}
+
+// criar uma função que dado uma string devolve outra string
+// essa função deve receber uma string e devolver uma string
+
+char *checkMessage(char *message)
+{
+    // separar o comando da mensagem
+    char *comando = strtok(message, " ");
+    char *user = strtok(NULL, " ");
+
+    // dado o user, procurar no arquivo messages.txt e retornar a linha
+    FILE *fp;
+    char line[255];
+    char *ret_message = "";
+    fp = fopen("messages.txt", "r"); // open the file in read mode
+    if (fp == NULL)
+    {
+        printf("Error opening file!\n");
+        return "Error";
+    }
+    while (fgets(line, sizeof(line), fp))
+    {
+        // check if the line starts with the receiver's name
+        if (strncmp(line, user, strlen(user)) == 0)
+        {
+            if (ret_message[0] == '\0')
+            {
+                ret_message = strdup(line);
+            }
+            else
+            {
+                strcat(ret_message, line);
+            }
+        }
+    }
+    fclose(fp);
+    return ret_message;
 }
 
 char *retrieve_message(char *receiver)
@@ -65,10 +103,11 @@ char *retrieve_message(char *receiver)
     return ret_message;
 }
 
-int verifyStatus(char *reciver){
-    
+int verifyStatus(char *reciver)
+{
+
     printf("verificando status de %s \n", reciver);
-    //fazer um trim no reciver
+    // fazer um trim no reciver
 
     FILE *fp;
     fp = fopen("status.txt", "r");
@@ -99,24 +138,33 @@ int verifyStatus(char *reciver){
     }
 }
 
-int sendMessage(char *mensagem)
+int saveMessage(char *mensagem)
 {
-    char *sender = strtok(mensagem, " ");
+    // separar a mensagem entre comando, sender, receiver e message
+    char *comando = strtok(mensagem, " ");
+    char *sender = strtok(NULL, " ");
     char *receiver = strtok(NULL, " ");
-    char *message = strtok(NULL, "\"");
+    char *message = strtok(NULL, "\0");
 
     printf("receiver: %s sender: %s message: %s \n", receiver, sender, message);
 
-
-    if(verifyStatus(receiver)==-1){//guarda a mensagem no arquivo messages.txt
-        printf("receiver offline");
-        store_message(receiver, sender, message);
-    }else{//manda a mensagem diretamente para o cliente
-        printf("receiver online");
-
+    // armazenar o sender receiver e message em um arquivo chamado messages.txt
+    FILE *fp;
+    fp = fopen("messages.txt", "r+");
+    if (fp == NULL)
+    {
+        printf("Erro ao abrir o arquivo messages.txt");
+        return -1;
     }
 
-
+    char linha[100];
+    // salvar a mensagem na última linha do arquivo
+    while (fgets(linha, 100, fp) != NULL)
+    {
+    }
+    fprintf(fp, "%s %s \"%s\"\n", sender, receiver, message);
+    fclose(fp);
+    return 0;
 }
 
 int saveDns(char *argumento, int new_fd)
@@ -299,37 +347,55 @@ int main(int argc, char **argv)
                     // verificar se o comando é "loggin"
                     if (strcmp(comando, "loggin") == 0)
                     {
-                        if(logginInterno(argumento)==0){
+                        if (logginInterno(argumento) == 0)
+                        {
                             char user[200];
                             sprintf(user, "setusuario:%s", argumento);
                             send(new_fd, user, strlen(user), 0);
-                        }else{
+                        }
+                        else
+                        {
                             send(new_fd, "loggin: Usuario não encontrado", 30, 0);
                         }
-                        //saveDns(argumento, inet_ntoa(their_addr.sin_addr));
+                        // saveDns(argumento, inet_ntoa(their_addr.sin_addr));
                     }
                     else if (strcmp(comando, "loggout") == 0)
                     {
                         loggoutInterno(argumento);
                         send(new_fd, "Loggout Concluido", 17, 0);
                     }
-                    else//Caso não seja um comando, vai ser uma mensagem
+                    else if (strcmp(comando, "sendMessage") == 0)
                     {
-                       
-                        sendMessage(aux);
+                        if (saveMessage(aux) == 0)
+                        {
+                            send(new_fd, "Mensagem enviada", 16, 0);
+                        }
+                        else
+                        {
+                            send(new_fd, "Mensagem não enviada", 20, 0);
+                        }
                     }
-
+                    else if (strcmp(comando, "checkMessageUpdate"))
+                    {
+                        char *message = checkMessage(aux);
+                        send(new_fd, message, strlen(message), 0);
+                    }
+                    else // Caso não seja nenhum dos comando acima
+                    {
+                        printf("Comando: %s\n", comando);
+                        send(new_fd, "Comando não encontrado", 22, 0);
+                    }
                 }
 
                 /* 'bye' message finishes the connection */
-                if (strcmp(buf, "bye") == 0)
+                if (strcmp(buf, "sair") == 0)
                 {
-                    send(new_fd, "bye", 3, 0);
+                    send(new_fd, "Finalizando conexao", 19, 0);
                 }
 
-            } while (strcmp(buf, "bye"));
+            } while (strcmp(buf, "sair"));
         }
-        close(new_fd); // parent doesn't need this
+        close(new_fd);
     }
 
     return 0;
