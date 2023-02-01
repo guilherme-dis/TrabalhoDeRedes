@@ -135,10 +135,12 @@ int checkInput(char *comando, char *argumento)
         printf("Mensagem recebida: %s\n", argumento);
         return 0;
     }
+
     else if (strcmp(comando, "help") == 0)
     {
         // Código para o comando "help"
         printf("Executando o comando help\n");
+
         return 0;
     }
     else
