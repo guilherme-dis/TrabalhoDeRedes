@@ -403,9 +403,9 @@ int main(int argc, char **argv)
                 memset(buf, 0x0, MAXDATASIZE);
                 /* Receives client message */
                 int message_len;
-                if ((message_len = recv(new_fd, buf, 1000, 0)) > 0)
+                if ((message_len = recv(new_fd, buf, MAXDATASIZE, 0)) > 0)
                 {
-                    char aux[100];
+                    char aux[MAXDATASIZE];
                     strcpy(aux, buf);
                     // a primeira palavra do buffer é o comando
                     char *comando = strtok(buf, " ");
@@ -417,7 +417,7 @@ int main(int argc, char **argv)
                     {
                         if (logginInterno(argumento) == 0)
                         {
-                            char user[200];
+                            char user[MAXDATASIZE];
                             sprintf(user, "setusuario %s", argumento);
                             send(new_fd, user, strlen(user), 0);
                         }
@@ -445,19 +445,19 @@ int main(int argc, char **argv)
                     }
                     else if (strcmp(comando, "checkStatus") == 0)
                     {
-                        char resposta[100];
+                        char resposta[MAXDATASIZE];
                         int res = checkStatus(aux);
                         if (res == 0)
                         {
-                            sprintf(resposta, "message %s online", argumento);
+                            sprintf(resposta, "message %s online\0", argumento);
                         }
                         else if (res == -1)
                         {
-                            sprintf(resposta, "message %s offline", argumento);
+                            sprintf(resposta, "message %s offline\0", argumento);
                         }
                         else
                         {
-                            sprintf(resposta, "error %s nao encontrado", argumento);
+                            sprintf(resposta, "error %s nao encontrado\0", argumento);
                         }
                         send(new_fd, resposta, strlen(resposta), 0);
                     }
@@ -465,13 +465,11 @@ int main(int argc, char **argv)
                     else if (strcmp(comando, "checkMessageUpdate") == 0)
                     {
                         char *message = checkMessage(aux);
-                        //se a mensagem estiver vazia, não retorna nada
-                        // se a mensagem de resposta for 'no' não envia nada
                         printf("Mensagem: %s\n", message);
                         if (strcmp(message, "no") != 0)
                         {
                             //acressentar ao inicio da mensagem a palavra message
-                            char aux2[100];
+                            char aux2[MAXDATASIZE];
                             sprintf(aux2, "message %s", message);  
                             printf("Mensagem: %s\n", aux2);  
                             send(new_fd, aux2, strlen(aux2), 0);
@@ -479,7 +477,7 @@ int main(int argc, char **argv)
                     }
                     else if(strcmp(comando,"deleteUser")==0){
                         if(deleteUser(aux)==0){
-                            send(new_fd,"message Usuario deletado com sucesso",28,0);
+                            send(new_fd,"message Usuario deletado com sucesso",37,0);
                         }
                     }
                     else // Caso não seja nenhum dos comando acima

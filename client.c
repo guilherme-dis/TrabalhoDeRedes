@@ -18,7 +18,7 @@
 
 #define PORT 3490 // the port client will be connecting to
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once
+#define MAXDATASIZE 1000 // max number of bytes we can get at once
 
 struct paramRotina
 {
@@ -136,7 +136,7 @@ int checkInput(char *comando, char *argumento)
         return 0;
     }
 
-    else if (strcmp(comando, "message") == 0)
+    else if (strcmp(comando, "error") == 0)
     {
         printf("Error: %s\n", argumento);
 
