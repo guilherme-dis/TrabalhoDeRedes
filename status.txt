@@ -1,2 +1,9 @@
+<<<<<<< Updated upstream
 guilherme@ufu.br 0
 carlos@dias.br 0
+=======
+guilherme@ufu.br 1
+carlos@dias.br 1
+daniel.dias@ufu.br 1
+ 
+>>>>>>> Stashed changes
