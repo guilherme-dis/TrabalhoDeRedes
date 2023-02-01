@@ -110,7 +110,7 @@ char *checkMessage(char *message)
         }
     }
     fclose(fp);
-    return "sem mensagens";
+    return "no";
 }
 
 char *retrieve_message(char *receiver)
@@ -342,7 +342,7 @@ int main(int argc, char **argv)
                     {
                         if (saveMessage(aux) == 0)
                         {
-                            send(new_fd, "message enviado com sucesso", 16, 0);
+                            send(new_fd, "message enviado com sucesso", 30, 0);
                         }
                         else
                         {
@@ -355,15 +355,15 @@ int main(int argc, char **argv)
                         int res = checkStatus(aux);
                         if (res == 0)
                         {
-                            sprintf(resposta, "%s online", argumento);
+                            sprintf(resposta, "message %s online", argumento);
                         }
                         else if (res == -1)
                         {
-                            sprintf(resposta, "%s offline", argumento);
+                            sprintf(resposta, "message %s offline", argumento);
                         }
                         else
                         {
-                            sprintf(resposta, "%s nao encontrado", argumento);
+                            sprintf(resposta, "error %s nao encontrado", argumento);
                         }
                         send(new_fd, resposta, strlen(resposta), 0);
                     }
@@ -371,7 +371,17 @@ int main(int argc, char **argv)
                     else if (strcmp(comando, "checkMessageUpdate") == 0)
                     {
                         char *message = checkMessage(aux);
-                        send(new_fd, message, strlen(message), 0);
+                        //se a mensagem estiver vazia, não retorna nada
+                        // se a mensagem de resposta for 'no' não envia nada
+                        printf("Mensagem: %s\n", message);
+                        if (strcmp(message, "no") != 0)
+                        {
+                            //acressentar ao inicio da mensagem a palavra message
+                            char aux2[100];
+                            sprintf(aux2, "message %s", message);  
+                            printf("Mensagem: %s\n", aux2);  
+                            send(new_fd, aux2, strlen(aux2), 0);
+                        }
                     }
                     /*else if(strcmp(comando,"deleteUser")==0){
                         if(delete(aux)==0){
