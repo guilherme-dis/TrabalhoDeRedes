@@ -27,11 +27,12 @@ void sigchld_handler(int s)
         ;
 }
 
+
 int checkStatus(char *receiver)
 {
-    //colocar um \0 no final da string
+    // colocar um \0 no final da string
     receiver[strlen(receiver)] = '\0';
-    //separar o comando da mensagem
+    // separar o comando da mensagem
     char *comando = strtok(receiver, " ");
     char *user = strtok(NULL, " ");
     printf("verificando status de %s \n", user);
@@ -49,8 +50,8 @@ int checkStatus(char *receiver)
         {
             char *status = strtok(linha, " ");
             status = strtok(NULL, " ");
-            //remover o \n do final da string
-            status[strlen(status) -1] = '\0';
+            // remover o \n do final da string
+            status[strlen(status) - 1] = '\0';
             if (!strcmp(status, "1"))
             {
                 printf("status 1\n");
@@ -64,17 +65,17 @@ int checkStatus(char *receiver)
                 return -1;
             }
         }
-        printf("Usuario nao encontrado\n");
-        return -1;
     }
-    
+    fclose(fp);
+    printf("Usuario nao encontrado\n");
+    return 1;
 }
 
 void store_message(char *receiver, char *sender, char *message)
 {
     FILE *fp;
-    fp = fopen("messages.txt", "r+");                         
-    fprintf(fp, "%s %s \"%s\"\n", receiver, sender, message); 
+    fp = fopen("messages.txt", "r+");
+    fprintf(fp, "%s %s \"%s\"\n", receiver, sender, message);
     fclose(fp);
 }
 char *checkMessage(char *message)
@@ -86,7 +87,7 @@ char *checkMessage(char *message)
     FILE *fp;
     char line[255];
     char *ret_message = "";
-    fp = fopen("messages.txt", "r+"); 
+    fp = fopen("messages.txt", "r+");
     if (fp == NULL)
     {
         printf("Error opening file!\n");
@@ -143,40 +144,7 @@ char *retrieve_message(char *receiver)
     return ret_message;
 }
 
-int verifyStatus(char *reciver)
-{
 
-    printf("verificando status de %s \n", reciver);
-    // fazer um trim no reciver
-
-    FILE *fp;
-    fp = fopen("status.txt", "r");
-    if (fp == NULL)
-    {
-        printf("Erro ao abrir o arquivo status.txt");
-        return -1;
-    }
-    char linha[100];
-    printf("verificando status de ");
-    while (fgets(linha, 100, fp) != NULL)
-    {
-        if (strstr(linha, reciver) != NULL)
-        {
-            char *status = strtok(linha, " ");
-            status = strtok(NULL, " ");
-            if (status[0] == '1')
-            {
-                fclose(fp);
-                return 0;
-            }
-            else
-            {
-                fclose(fp);
-                return -1;
-            }
-        }
-    }
-}
 
 int saveMessage(char *mensagem)
 {
@@ -199,33 +167,7 @@ int saveMessage(char *mensagem)
     while (fgets(linha, 100, fp) != NULL)
     {
     }
-    fprintf(fp, "%s %s \"%s\"\n", sender, receiver, message);
-    fclose(fp);
-    return 0;
-}
-
-int saveDns(char *argumento, int new_fd)
-{
-    char *username = strtok(argumento, " ");
-    FILE *fp;
-    fp = fopen("dns.txt", "r+");
-    if (fp == NULL)
-    {
-        printf("Erro ao abrir o arquivo dns.txt");
-        return -1;
-    }
-    char linha[100];
-    while (fgets(linha, 100, fp) != NULL)
-    {
-        if (strstr(linha, username) != NULL)
-        {
-            fseek(fp, -strlen(linha), SEEK_CUR);
-            fprintf(fp, "%s %d\n", username, new_fd);
-            fclose(fp);
-            return 0;
-        }
-    }
-    fprintf(fp, "%s %d\n", username, new_fd);
+    fprintf(fp, "%s %s \"%s\"\n", receiver, sender, message);
     fclose(fp);
     return 0;
 }
@@ -397,33 +339,48 @@ int main(int argc, char **argv)
                     else if (strcmp(comando, "loggout") == 0) // Funciona
                     {
                         loggoutInterno(argumento);
-                        send(new_fd, "Loggout Concluido", 17, 0);
+                        send(new_fd, "quit", 17, 0);
                     }
-                    else if (strcmp(comando, "sendMessage") == 0)//funciona
+                    else if (strcmp(comando, "sendMessage") == 0) // funciona
                     {
                         if (saveMessage(aux) == 0)
                         {
-                            send(new_fd, "Mensagem enviada", 16, 0);
+                            send(new_fd, "message enviado com sucesso", 16, 0);
                         }
                         else
                         {
-                            send(new_fd, "Mensagem não enviada", 20, 0);
+                            send(new_fd, "message nao enviado", 20, 0);
                         }
                     }
                     else if (strcmp(comando, "checkStatus") == 0)
                     {
-                        if(checkStatus(aux)==0){
-                            send(new_fd, "online", 6, 0);
-                        }else{
-                            send(new_fd, "offline", 7, 0);
+                        char resposta[100];
+                        int res = checkStatus(aux);
+                        if (res == 0)
+                        {
+                            sprintf(resposta, "%s online", argumento);
                         }
+                        else if (res == -1)
+                        {
+                            sprintf(resposta, "%s offline", argumento);
+                        }
+                        else
+                        {
+                            sprintf(resposta, "%s nao encontrado", argumento);
+                        }
+                        send(new_fd, resposta, strlen(resposta), 0);
                     }
 
-                    else if (strcmp(comando, "checkMessageUpdate")==0)
+                    else if (strcmp(comando, "checkMessageUpdate") == 0)
                     {
                         char *message = checkMessage(aux);
                         send(new_fd, message, strlen(message), 0);
                     }
+                    /*else if(strcmp(comando,"deleteUser")==0){
+                        if(delete(aux)==0){
+                            send(new_fd,"Usuario deletado com sucesso",28,0);
+                        }
+                    }*/
                     else // Caso não seja nenhum dos comando acima
                     {
                         printf("Comando: %s\n", comando);
