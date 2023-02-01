@@ -26,6 +26,100 @@ void sigchld_handler(int s)
     while (waitpid(-1, NULL, WNOHANG) > 0)
         ;
 }
+void deleteUserFromCredentials(char *user)
+{
+    FILE *fp;
+    char line[255];
+    fp = fopen("credenciais.txt", "r+");
+    if (fp == NULL)
+    {
+        printf("Error opening file!\n");
+        return;
+    }
+    while (fgets(line, sizeof(line), fp))
+    {
+        if (strncmp(line, user, strlen(user)) == 0)
+        {
+            fseek(fp, -strlen(line), SEEK_CUR);
+            int i;
+            for (i = 1; i < strlen(line); i++)
+            {
+                fputc(' ', fp);
+            }
+            fputc('\n', fp);
+            fclose(fp);
+            return;
+        }
+    }
+    fclose(fp);
+}
+
+void deleteUsersFromStatus(char *user)
+{
+    FILE *fp;
+    char line[255];
+    fp = fopen("status.txt", "r+");
+    if (fp == NULL)
+    {
+        printf("Error opening file!\n");
+        return;
+    }
+    while (fgets(line, sizeof(line), fp))
+    {
+        if (strncmp(line, user, strlen(user)) == 0)
+        {
+            fseek(fp, -strlen(line), SEEK_CUR);
+            int i;
+            for (i = 1; i < strlen(line); i++)
+            {
+                fputc(' ', fp);
+            }
+            fputc('\n', fp);
+            fclose(fp);
+            return;
+        }
+    }
+    fclose(fp);
+}
+
+void deleteUserFromMessages(char *user)
+{
+    FILE *fp;
+    char line[255];
+    fp = fopen("messages.txt", "r+");
+    if (fp == NULL)
+    {
+        printf("Error opening file!\n");
+        return;
+    }
+    while (fgets(line, sizeof(line), fp))
+    {
+        if (strncmp(line, user, strlen(user)) == 0)
+        {
+            fseek(fp, -strlen(line), SEEK_CUR);
+            int i;
+            for (i = 1; i < strlen(line); i++)
+            {
+                fputc(' ', fp);
+            }
+            fputc('\n', fp);
+            fclose(fp);
+            return;
+        }
+    }
+    fclose(fp);
+}
+
+int deleteUser(char *msg){
+    //separar o comando da mensagem
+    char *comando = strtok(msg, " ");
+    char *user = strtok(NULL, " ");
+    deleteUserFromCredentials(user);
+    deleteUsersFromStatus(user);
+    deleteUserFromMessages(user);
+    return 0;
+}
+
 
 int checkStatus(char *receiver)
 {
@@ -383,15 +477,15 @@ int main(int argc, char **argv)
                             send(new_fd, aux2, strlen(aux2), 0);
                         }
                     }
-                    /*else if(strcmp(comando,"deleteUser")==0){
-                        if(delete(aux)==0){
-                            send(new_fd,"Usuario deletado com sucesso",28,0);
+                    else if(strcmp(comando,"deleteUser")==0){
+                        if(deleteUser(aux)==0){
+                            send(new_fd,"message Usuario deletado com sucesso",28,0);
                         }
-                    }*/
+                    }
                     else // Caso não seja nenhum dos comando acima
                     {
                         printf("Comando: %s\n", comando);
-                        send(new_fd, "Comando não encontrado", 22, 0);
+                        send(new_fd, "message comando invalido", 22, 0);
                     }
                 }
 

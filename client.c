@@ -136,7 +136,7 @@ int checkInput(char *comando, char *argumento)
         return 0;
     }
 
-    else if (strcmp(comando, "error") == 0)
+    else if (strcmp(comando, "message") == 0)
     {
         printf("Error: %s\n", argumento);
 
