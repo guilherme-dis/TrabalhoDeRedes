@@ -47,16 +47,133 @@ void sigHandler()
     fprintf(stderr, "*** Pegou um sinal ***\n");
 }
 
+void setUser(const char *username)
+{
+    FILE *fp;
+
+    fp = fopen("user.txt", "w");
+    if (fp == NULL)
+    {
+        perror("Erro ao abrir arquivo");
+        return;
+    }
+
+    fprintf(fp, "%s", username);
+
+    fclose(fp);
+}
+
+int userIsSet()
+{
+    FILE *fp;
+    int c;
+
+    fp = fopen("user.txt", "r");
+    if (fp == NULL)
+    {
+        return 0;
+    }
+
+    c = fgetc(fp);
+    if (c == EOF || c == ' ' || c == '\n')
+    {
+        fclose(fp);
+        return 0;
+    }
+    else
+    {
+        fclose(fp);
+        return 1;
+    }
+}
+
+void getUser(char *user)
+{
+    FILE *file;
+    file = fopen("user.txt", "r");
+    if (file == NULL)
+    {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
+    fgets(user, MAXDATASIZE, file);
+    fclose(file);
+}
+
+void parse(char *input, char *comando, char *argumento)
+{
+    char *pt;
+
+    strcpy(comando, "");
+    strcpy(argumento, "");
+
+    pt = strtok(input, " ");
+    strcpy(comando, pt);
+
+    pt = strtok(NULL, "\0");
+    strcpy(argumento, pt);
+
+    strcpy(input, "");
+}
+
+int checkInput(char *comando, char *argumento)
+{
+    if (strcmp(comando, "quit") == 0)
+    {
+        printf("\nDeslogando...\n");
+        setUser("");
+        return 1;
+    }
+    else if (strcmp(comando, "setusuario") == 0)
+    {
+        printf("\nSetando usuario\n");
+        setUser(argumento);
+        return 0;
+    }
+    else if (strcmp(comando, "message") == 0)
+    {
+        printf("Mensagem recebida: %s\n", argumento);
+        return 0;
+    }
+    else if (strcmp(comando, "help") == 0)
+    {
+        // Código para o comando "help"
+        printf("Executando o comando help\n");
+        return 0;
+    }
+    else
+    {
+        // Comando inválido
+        printf("Primitiva recebida invalida\n");
+        return 0;
+    }
+}
+
 int *rotina_mensagem(struct paramRotina *param)
 {
-    char str[100] = "loggin daniel.dias@ufu.br senha";
+    char str[MAXDATASIZE];
+    char usuario[MAXDATASIZE];
+
+    char resposta[MAXDATASIZE];
+    strcpy(resposta, "");
+
+    char comando[MAXDATASIZE], argumento[MAXDATASIZE];
 
     while (1)
     {
-        sleep(5);
-        if (param->kill == 0)
+        if ((numbytes = read(sockfd, resposta, MAXDATASIZE)) > 0)
         {
-            printf("rotina rodando\n");
+            parse(resposta, comando, argumento);
+            param->kill = checkInput(comando, argumento);
+        }
+
+        sleep(1);
+
+        if (param->kill == 0 && userIsSet())
+        {
+            getUser(usuario);
+            strcpy(str, "checkMessageUpdate ");
+            strcat(str, usuario);
             write(param->sockfd, str, strlen(str));
         }
         else
@@ -124,7 +241,7 @@ int main(int argc, char *argv[])
     int final;
 
     pthread_create(&rotina, NULL, rotina_mensagem, &param);
-
+    char comando[MAXDATASIZE], argumento[MAXDATASIZE];
     while (1)
     {
         memset(oBuf, 0, MAXDATASIZE);
@@ -135,18 +252,14 @@ int main(int argc, char *argv[])
         write(sockfd, oBuf, strlen(oBuf));
 
         printf("Waiting....\n");
-        memset(iBuf, 0, MAXDATASIZE);
-        if ((numbytes = read(sockfd, iBuf, MAXDATASIZE)) > 0)
+
+        sleep(3);
+        if (strcmp(oBuf, "loggout") == 0)
         {
-            printf("Received [%s] with %d bytes\n", iBuf, numbytes);
-        }
-        if (!strcmp(iBuf, "quit"))
-        {
-            printf("Connection closed\n");
-            param.kill = 0;
-            pthread_join(rotina, &final);
+            printf("Fechando..\n");
+            pthread_cancel(rotina);
             close(sockfd);
-            exit(0);
+            break;
         }
     }
 }

@@ -27,7 +27,6 @@ void sigchld_handler(int s)
         ;
 }
 
-
 int checkStatus(char *receiver)
 {
     // colocar um \0 no final da string
@@ -143,8 +142,6 @@ char *retrieve_message(char *receiver)
     fclose(fp);
     return ret_message;
 }
-
-
 
 int saveMessage(char *mensagem)
 {
@@ -314,7 +311,7 @@ int main(int argc, char **argv)
                 int message_len;
                 if ((message_len = recv(new_fd, buf, 1000, 0)) > 0)
                 {
-                    char aux[100] = "";
+                    char aux[100];
                     strcpy(aux, buf);
                     // a primeira palavra do buffer é o comando
                     char *comando = strtok(buf, " ");
@@ -327,7 +324,7 @@ int main(int argc, char **argv)
                         if (logginInterno(argumento) == 0)
                         {
                             char user[200];
-                            sprintf(user, "setusuario:%s", argumento);
+                            sprintf(user, "setusuario %s", argumento);
                             send(new_fd, user, strlen(user), 0);
                         }
                         else
@@ -339,7 +336,7 @@ int main(int argc, char **argv)
                     else if (strcmp(comando, "loggout") == 0) // Funciona
                     {
                         loggoutInterno(argumento);
-                        send(new_fd, "quit", 17, 0);
+                        send(new_fd, "quit ", 17, 0);
                     }
                     else if (strcmp(comando, "sendMessage") == 0) // funciona
                     {
