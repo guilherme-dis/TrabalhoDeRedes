@@ -27,28 +27,66 @@ void sigchld_handler(int s)
         ;
 }
 
+int checkStatus(char *receiver)
+{
+    //colocar um \0 no final da string
+    receiver[strlen(receiver)] = '\0';
+    //separar o comando da mensagem
+    char *comando = strtok(receiver, " ");
+    char *user = strtok(NULL, " ");
+    printf("verificando status de %s \n", user);
+    FILE *fp;
+    fp = fopen("status.txt", "r+");
+    if (fp == NULL)
+    {
+        printf("Erro ao abrir o arquivo status.txt\n");
+        return -1;
+    }
+    char linha[100];
+    while (fgets(linha, 100, fp) != NULL)
+    {
+        if (strstr(linha, user) != NULL)
+        {
+            char *status = strtok(linha, " ");
+            status = strtok(NULL, " ");
+            //remover o \n do final da string
+            status[strlen(status) -1] = '\0';
+            if (!strcmp(status, "1"))
+            {
+                printf("status 1\n");
+                fclose(fp);
+                return 0;
+            }
+            else
+            {
+                printf("status 0\n");
+                fclose(fp);
+                return -1;
+            }
+        }
+        printf("Usuario nao encontrado\n");
+        return -1;
+    }
+    
+}
+
 void store_message(char *receiver, char *sender, char *message)
 {
     FILE *fp;
-    fp = fopen("messages.txt", "r+");                         // Abre o arquivo em append mode
-    fprintf(fp, "%s %s \"%s\"\n", receiver, sender, message); // Escreve no arquivo no modo "Destinatario remetente "mensagem"
+    fp = fopen("messages.txt", "r+");                         
+    fprintf(fp, "%s %s \"%s\"\n", receiver, sender, message); 
     fclose(fp);
 }
-
-// criar uma função que dado uma string devolve outra string
-// essa função deve receber uma string e devolver uma string
-
 char *checkMessage(char *message)
 {
-    // separar o comando da mensagem
     char *comando = strtok(message, " ");
     char *user = strtok(NULL, " ");
 
-    // dado o user, procurar no arquivo messages.txt e retornar a linha
+    printf("verificando mensagens de %s \n", user);
     FILE *fp;
     char line[255];
     char *ret_message = "";
-    fp = fopen("messages.txt", "r"); // open the file in read mode
+    fp = fopen("messages.txt", "r+"); 
     if (fp == NULL)
     {
         printf("Error opening file!\n");
@@ -56,21 +94,23 @@ char *checkMessage(char *message)
     }
     while (fgets(line, sizeof(line), fp))
     {
-        // check if the line starts with the receiver's name
         if (strncmp(line, user, strlen(user)) == 0)
         {
-            if (ret_message[0] == '\0')
+            char *ret_message = strdup(line);
+            printf("linha: %s", ret_message);
+            fseek(fp, -strlen(line), SEEK_CUR);
+            int i;
+            for (i = 1; i < strlen(line); i++)
             {
-                ret_message = strdup(line);
+                fputc(' ', fp);
             }
-            else
-            {
-                strcat(ret_message, line);
-            }
+            fputc('\n', fp);
+            fclose(fp);
+            return ret_message;
         }
     }
     fclose(fp);
-    return ret_message;
+    return "sem mensagens";
 }
 
 char *retrieve_message(char *receiver)
@@ -140,7 +180,6 @@ int verifyStatus(char *reciver)
 
 int saveMessage(char *mensagem)
 {
-    // separar a mensagem entre comando, sender, receiver e message
     char *comando = strtok(mensagem, " ");
     char *sender = strtok(NULL, " ");
     char *receiver = strtok(NULL, " ");
@@ -148,7 +187,6 @@ int saveMessage(char *mensagem)
 
     printf("receiver: %s sender: %s message: %s \n", receiver, sender, message);
 
-    // armazenar o sender receiver e message em um arquivo chamado messages.txt
     FILE *fp;
     fp = fopen("messages.txt", "r+");
     if (fp == NULL)
@@ -158,7 +196,6 @@ int saveMessage(char *mensagem)
     }
 
     char linha[100];
-    // salvar a mensagem na última linha do arquivo
     while (fgets(linha, 100, fp) != NULL)
     {
     }
@@ -231,7 +268,7 @@ int getCredentials(char *argumento)
     char linha[100];
     while (fgets(linha, 100, fp) != NULL)
     {
-        if (strstr(linha, argumento) != NULL) // se o argumento tiver menas letras, mas for igual tipo "joao" e "joaozinho", ele vai retornar 0 porque joao esta contido em joaozinho
+        if (strstr(linha, argumento) != NULL)
         {
             fclose(fp);
             return 0;
@@ -329,10 +366,8 @@ int main(int argc, char **argv)
             sleep(5);
             do
             {
-
                 /* Zeroing buffers */
                 memset(buf, 0x0, MAXDATASIZE);
-
                 /* Receives client message */
                 int message_len;
                 if ((message_len = recv(new_fd, buf, 1000, 0)) > 0)
@@ -345,7 +380,7 @@ int main(int argc, char **argv)
                     char *argumento = strtok(NULL, "\0");
 
                     // verificar se o comando é "loggin"
-                    if (strcmp(comando, "loggin") == 0)
+                    if (strcmp(comando, "loggin") == 0) // Funciona
                     {
                         if (logginInterno(argumento) == 0)
                         {
@@ -355,16 +390,16 @@ int main(int argc, char **argv)
                         }
                         else
                         {
-                            send(new_fd, "loggin: Usuario não encontrado", 30, 0);
+                            send(new_fd, "error Usuario ou senha Nao encontrados", 30, 0);
                         }
                         // saveDns(argumento, inet_ntoa(their_addr.sin_addr));
                     }
-                    else if (strcmp(comando, "loggout") == 0)
+                    else if (strcmp(comando, "loggout") == 0) // Funciona
                     {
                         loggoutInterno(argumento);
                         send(new_fd, "Loggout Concluido", 17, 0);
                     }
-                    else if (strcmp(comando, "sendMessage") == 0)
+                    else if (strcmp(comando, "sendMessage") == 0)//funciona
                     {
                         if (saveMessage(aux) == 0)
                         {
@@ -375,7 +410,16 @@ int main(int argc, char **argv)
                             send(new_fd, "Mensagem não enviada", 20, 0);
                         }
                     }
-                    else if (strcmp(comando, "checkMessageUpdate"))
+                    else if (strcmp(comando, "checkStatus") == 0)
+                    {
+                        if(checkStatus(aux)==0){
+                            send(new_fd, "online", 6, 0);
+                        }else{
+                            send(new_fd, "offline", 7, 0);
+                        }
+                    }
+
+                    else if (strcmp(comando, "checkMessageUpdate")==0)
                     {
                         char *message = checkMessage(aux);
                         send(new_fd, message, strlen(message), 0);
